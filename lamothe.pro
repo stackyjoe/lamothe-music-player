@@ -4,9 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui widgets
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = lamothe
 TEMPLATE = app
@@ -22,17 +22,42 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-CONFIG += c++11
+#CONFIG += c++1z
+
+QMAKE_CXXFLAGS += -std=c++17
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    music_library.cpp \
+    music_daemon.cpp \
+    sfml_player.cpp \
+    song_tile_widget.cpp \
+    daemon_data.cpp
 
 HEADERS += \
-        mainwindow.hpp
+        mainwindow.hpp \
+    music_library.hpp \
+    music_player.hpp \
+    music_daemon.hpp \
+    sfml_player.hpp \
+    song_tile_widget.hpp \
+    daemon_data.hpp
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    song_tile_widget.ui
+
+
+LIBS += -lsfml-audio            #SFML Static Module
+LIBS += -lsfml-system
+LIBS += -lopenal                #Dependency
+LIBS += -lFLAC                  #Dependency
+LIBS += -lvorbisenc             #Dependency
+LIBS += -lvorbisfile            #Dependency
+LIBS += -lvorbis                #Dependency
+LIBS += -logg                   #Dependency
+LIBS += -ltag                   #Dependency
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

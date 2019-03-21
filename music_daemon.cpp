@@ -1,6 +1,10 @@
-#include "sfml_music_player.hpp"
+#include "music_daemon.hpp"
+#include <mutex>
 
-sfml_music_player::sfml_music_player()
+music_daemon::music_daemon(daemon_data &&_data) :
+    data(std::move(_data)),
+    daemon_thread([this](){this->data.watch();})
 {
 
 }
+
