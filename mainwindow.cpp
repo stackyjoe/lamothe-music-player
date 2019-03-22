@@ -5,19 +5,37 @@
 #include <QPushButton>
 #include <QStringListModel>
 
+#include "daemon_watcher.tpp"
 #include "mainwindow.hpp"
 #include "song_tile_widget.hpp"
 
-MainWindow::MainWindow(music_player &_player, QWidget *parent) :
+MainWindow::MainWindow(music_player &_audio_interface, tag_handler &_tag_interface, QWidget *parent) :
     QMainWindow(parent),
     ui(std::make_unique<Ui::MainWindow>()),
-    lib(QDir::homePath().toStdString() + "/.local/share/applications/lamothe/user_settings.conf", _player),
-    music_daemon(
-        daemon_data(ui.get(),
-                    lib,
-                    volume_lock,
-                    seek_bar_lock,
-                    [this](float percent){this->setSeekBarPosition(percent);})
+    lib(QDir::homePath().toStdString() + "/.local/share/applications/lamothe/user_settings.conf", _audio_interface
+        ),
+    audio_interface(_audio_interface),
+    tag_interface(_tag_interface),
+    daemon_thread(
+        [&](){
+            daemon_watcher(
+                // daemon_watcher is a template function that just calls its arguments,
+                //  in the given order, in a while(1) loop.
+                [&]() {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(125));
+                },
+                [&]() {
+                    // Syncs backend with user-expected behavior.
+                    this->sync_ui_with_library();
+                },
+                [&]() {
+                    // Updates seek bar based on backend
+                    if(ui->seekSlider != nullptr) {
+                        setSeekBarPosition(lib.getPercentPlayed());
+                    }
+                }
+            );
+        }
     )
 {
     ui->setupUi(this);
@@ -32,21 +50,13 @@ MainWindow::MainWindow(music_player &_player, QWidget *parent) :
     connect(ui->actionSaveLibrary, &QAction::triggered, this, &MainWindow::save_library);
     connect(ui->actionExitProgram, &QAction::triggered, this, &MainWindow::exitProgram);
     connect(ui->volumeSlider, &QAbstractSlider::valueChanged, this, &MainWindow::changeVolume);
-    connect(ui->seekSlider, &QAbstractSlider::sliderReleased, this, &MainWindow::seek);
-    connect(ui->seekSlider, &QAbstractSlider::sliderPressed, this, &MainWindow::lock_seek_bar);
+    connect(ui->seekSlider, &QAbstractSlider::sliderReleased, this, [&](){this->seek();});
+    connect(ui->seekSlider, &QAbstractSlider::sliderPressed, this, [&](){seek_bar_lock.lock();});
 }
 
 void MainWindow::fooBar() {
     // This is just a dummy function for not-yet-implemented functionalities.
     qDebug() << tr("Function not yet implemented.\n");
-}
-
-void MainWindow::lock_seek_bar() {
-    seek_bar_lock.lock();
-}
-
-void MainWindow::unlock_seek_bar() {
-    seek_bar_lock.unlock();
 }
 
 void MainWindow::changeVolume(int new_vol) {
@@ -76,6 +86,10 @@ void MainWindow::seek() {
     pos = pos/std::max(1,ui->seekSlider->maximum());
     lib.seekByPercent(pos);
     seek_bar_lock.unlock();
+}
+
+void MainWindow::setCurrentlyPlayingTrackTitle(const std::string& title) {
+    ui->currently_playing_label->setText(QString::fromStdString(title));
 }
 
 void MainWindow::setSeekBarPosition(float percent) {
@@ -117,12 +131,73 @@ void MainWindow::sync_tiles_with_library() {
 
     for(size_t i = 0; i < max; ++i) {
         QModelIndex index = model->index(static_cast<int>(i),0);
-        auto * p = new song_tile_widget(songs[i],lib); // NOLINT(cppcoreguidelines-owning-memory)
+        auto * p = new song_tile_widget(songs[i],lib, tag_interface, *this); // NOLINT(cppcoreguidelines-owning-memory)
         ui->listView->setIndexWidget(index, p);
     }
 
+}
+
+void MainWindow::sync_ui_with_library() {
+    switch(lib.getState()) {
+    case UserDesiredState::play :
+        switch(audio_interface.getStatus()) {
+        case PlayerStatus::playing:
+            break;
+        case PlayerStatus::paused:
+            qDebug() << tr("User wants to play, but backend is paused.\n");
+            audio_interface.play();
+            break;
+        default: {
+            std::string next = lib.next_song();
+            tag_interface.openFromFile(next);
+            if(not tag_interface.ownsAFile()) {
+                break;
+            }
+            ui->currently_playing_label->setText(QString::fromStdString(tag_interface.track_title()));
+            playSong(next);
+        } break;
+        }
+        break;
+    case UserDesiredState::pause :
+        switch(audio_interface.getStatus()) {
+        case PlayerStatus::playing:
+            audio_interface.pause();
+            break;
+
+        default:
+            break;
+        }
+        break;
+
+    case UserDesiredState::stop :
+        switch (audio_interface.getStatus()) {
+        case PlayerStatus::playing:
+            audio_interface.pause();
+            break;
+
+        default:
+            break;
+        }
+        break;
+
+    default:
+        qDebug() << "music_libary.state has been corrupted.";
+        break;
     }
 
+}
+
+void MainWindow::playSong(const std::string &path) {
+    std::scoped_lock lock(audio_lock);
+
+    if(not audio_interface.openFromFile(path)) {
+        qDebug() << "Error opening file: " << QString::fromStdString(path) << "\n";
+    }
+
+    audio_interface.play();
+    lib.find_song(path);
+    lib.setState(UserDesiredState::play);
+}
 
 void MainWindow::add_file_to_library(const std::string& file_path) {
 
@@ -132,11 +207,11 @@ void MainWindow::add_file_to_library(const std::string& file_path) {
         int cur_song_count = ui->listView->model()->rowCount();
         ui->listView->model()->insertRow(cur_song_count);
         QModelIndex index = ui->listView->model()->index(cur_song_count, 0);
-        auto * p = new song_tile_widget(file_path, lib); // NOLINT(cppcoreguidelines-owning-memory)
+        auto * p = new song_tile_widget(file_path, lib, tag_interface, *this); // NOLINT(cppcoreguidelines-owning-memory)
         ui->listView->setIndexWidget(index, p);
         ui->listView->update();
     }
-    }
+}
 
 void MainWindow::add_file_by_dialog() {
 

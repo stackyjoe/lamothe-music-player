@@ -27,11 +27,11 @@ public:
     music_library(music_library &&other) = default;
     music_library &operator=(music_library &&other) = default;
 
-    void checkStatus();
+    std::string next_song();
     void setState(UserDesiredState _state);
     UserDesiredState getState();
     void setLibraryFile(QString lib_path);
-    void playSong(const std::string &path);
+    void find_song(const std::string &path);
     void setVolume(int new_vol);
     float getPercentPlayed();
     void seekByPercent(float percent);
@@ -40,6 +40,7 @@ public:
     void add(std::string song_path);
     void remove(const std::string &song_path);
     const std::vector<std::string> &songs();
+    const std::string what_file_is_playing();
 
 protected:
     // Optional iterator is set to std::nullopt to indicate iterator invalidation

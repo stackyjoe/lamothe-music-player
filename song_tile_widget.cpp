@@ -3,35 +3,25 @@
 #include <QDebug>
 #include <QKeyEvent>
 
-song_tile_widget::song_tile_widget(const std::string &_path, music_library &_lib, QWidget *parent) :
-    QWidget(parent),
+song_tile_widget::song_tile_widget(const std::string &_path, music_library &_lib, tag_handler &_tag_interface, MainWindow &_mw) :
+    QWidget(nullptr),
     song_path(_path),
     lib(_lib),
-    tags_handle(song_path.data()),
+    tag_interface(_tag_interface),
+    mw(_mw),
     ui(std::make_unique<Ui::song_tile_widget>())
 {
     ui->setupUi(this);
-    ui->track_label->setText(QString::fromUtf8(tags_handle.tag()->title().toCString(true)));
-    ui->album_label->setText(QString::fromUtf8(tags_handle.tag()->album().toCString(true)));
-    ui->artist_label->setText(QString::fromUtf8(tags_handle.tag()->artist().toCString(true)));
-    ui->year_label->setText(QString::number(tags_handle.tag()->year()));
-
-    int duration = tags_handle.file()->audioProperties()->lengthInSeconds();
-    int hours = duration / (60*60);
-    int minutes = duration / 60;
-    int seconds = duration % 60;
-
-    QString time;
-    if(hours) {
-        time += QString::number(hours) + ":";
-    }
-    time += QString("%1").arg(minutes, 2, 10, QChar('0')) + ":"
-            + QString("%1").arg(seconds,2,10, QChar('0'));
-
-    ui->duration_label->setText(time);
+    tag_interface.openFromFile(song_path);
+    ui->track_label->setText(QString::fromStdString(tag_interface.track_title()));
+    ui->album_label->setText(QString::fromStdString(tag_interface.album_title()));
+    ui->artist_label->setText(QString::fromStdString(tag_interface.artist_title()));
+    ui->year_label->setText(QString::fromStdString(tag_interface.recording_year()));
+    ui->duration_label->setText(QString::fromStdString(tag_interface.duration()));
 }
 
-void song_tile_widget::mouseDoubleClickEvent( [[ maybe_unused ]]QMouseEvent *ev) {
-    lib.playSong(song_path);
+void song_tile_widget::mouseDoubleClickEvent( [[ maybe_unused ]] QMouseEvent *ev) {
+    mw.playSong(song_path);
+    mw.setCurrentlyPlayingTrackTitle(ui->track_label->text().toStdString());
     return;
 }

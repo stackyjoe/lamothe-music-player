@@ -6,9 +6,11 @@
 #include <QMainWindow>
 #include <mutex>
 #include <SFML/Audio.hpp>
+#include <thread>
 
 #include "music_library.hpp"
-#include "music_daemon.hpp"
+#include "music_player.hpp"
+#include "tag_handler.hpp"
 
 namespace Ui {
 class MainWindow;
@@ -19,7 +21,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(music_player &_player, QWidget *parent = nullptr);
+    explicit MainWindow(music_player &_audio_interface, tag_handler &_tag_interface, QWidget *parent = nullptr);
     MainWindow(const MainWindow &other) = delete;
     MainWindow &operator=(const MainWindow &other) = delete;
 
@@ -27,8 +29,9 @@ public:
     MainWindow &operator=(MainWindow &&other) = default;
     ~MainWindow() override = default;
 
-    void playSong(const QString &path);
+    void playSong(const std::string &path);
     void setSeekBarPosition(float percent);
+    void setCurrentlyPlayingTrackTitle(const std::string& title);
 
 protected:
     void fooBar();
@@ -37,21 +40,22 @@ protected:
     void add_folder_by_dialog();
     void save_library();
     void sync_tiles_with_library();
+    void sync_ui_with_library();
     void changeVolume(int new_vol);
     void seek();
-
-    // Connected with the seekSlider so that the slider isn't moved while user interacts.
-    void lock_seek_bar();
-    void unlock_seek_bar();
 
     [[ noreturn ]] void exitProgram();
 
 private:
     std::unique_ptr<Ui::MainWindow> ui;
     music_library lib;
+    music_player &audio_interface;
+    tag_handler &tag_interface;
+
+    std::mutex audio_lock;
     std::mutex seek_bar_lock;
     std::mutex volume_lock;
-    music_daemon music_daemon;
+    std::thread daemon_thread;
 
 private slots:
     void on_playButton_clicked();

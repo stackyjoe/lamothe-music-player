@@ -138,80 +138,22 @@ const std::vector<std::string> &music_library::songs() {
     return song_paths;
 }
 
-void music_library::checkStatus() {
-    std::unique_lock lock(player_mutex, std::try_to_lock);
-    if(!lock.owns_lock())
-        return;
+std::string music_library::next_song() {
+    std::string song_path;
+    if(current_song.has_value() and current_song.value() != song_paths.end() && ++current_song.value() != song_paths.end())
+        song_path = * current_song.value();
 
-    PlayerStatus player_status = player.getStatus();
-
-    switch(desired_state) {
-    case UserDesiredState::play :
-        switch(player_status) {
-        case PlayerStatus::playing:
-            break;
-        case PlayerStatus::paused:
-            player.play();
-            break;
-
-        default:
-            if(current_song.has_value() and current_song.value() != song_paths.end() && ++current_song.value() != song_paths.end()) {
-                if(not player.openFromFile(*current_song.value()) ) {
-                    qDebug() << "Error opening file: " << QString::fromStdString(*current_song.value()) << "\n";
-                    setState(UserDesiredState::error);
-                    return;
-                }
-                player.play();
-            }
-            else {
-                setState(UserDesiredState::stop);
-            }
-            break;
-        }
-        break;
-    case UserDesiredState::pause :
-        switch(player_status) {
-        case PlayerStatus::playing:
-            player.pause();
-            break;
-
-        default:
-            break;
-        }
-        break;
-
-    case UserDesiredState::stop :
-        switch (player_status) {
-        case PlayerStatus::playing:
-            player.pause();
-            break;
-
-        default:
-            break;
-        }
-        break;
-
-    default:
-        qDebug() << "music_libary.state has been corrupted.";
-        break;
-    }
-
+    return song_path;
 }
 
-void music_library::playSong(const std::string &path) {
-    std::scoped_lock lock(player_mutex);
-    if(unique_song_paths.find(path) == unique_song_paths.end()) {
-        qDebug() << "Error in music_library::playSong(" << QString::fromStdString(path) << ")\n";
-        return;
-    }
+const std::string music_library::what_file_is_playing() {
+    std::string song_path;
+    if(current_song.has_value())
+        song_path = * current_song.value();
+    return song_path;
+}
 
-    if(not player.openFromFile(path)) {
-        qDebug() << "Error opening file: " << QString::fromStdString(path) << "\n";
-    }
-
-    player.play();
-    setState(UserDesiredState::play);
-
+void music_library::find_song(const std::string &path) {
     auto itr = song_paths.begin();
 
     while(itr != song_paths.end() and *itr != path)

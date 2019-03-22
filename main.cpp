@@ -5,6 +5,7 @@
 #include <QDir>
 
 #include "sfml_player.hpp"
+#include "taglib_handler.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -17,8 +18,9 @@ int main(int argc, char *argv[])
     }
 
     sfml_player player;
+    taglib_handler tag_interface;
     QApplication a(argc, argv);
-    MainWindow w(player, nullptr);
+    MainWindow w(player, tag_interface, nullptr);
     w.show();
 
     return QApplication::exec();
