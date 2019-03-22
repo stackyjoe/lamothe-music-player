@@ -1,5 +1,5 @@
-#ifndef DAEMON_DATA_TPP
-#define DAEMON_DATA_TPP
+#ifndef DAEMON_WATCHER_TPP
+#define DAEMON_WATCHER_TPP
 
 #include <any>
 #include <thread>
@@ -10,10 +10,10 @@ template<typename... Args>
     // Checks that its arguments are all functions with no needed arguments.
     static_assert ( (std::is_invocable<decltype(args)>::value
                      && ... && true),
-                    "daemon_watch instantiated with template argument that is not a function of no arguments.\n");
+                    "daemon_watcher instantiated with a non-void function as template argument.\n");
     while(1) {
         ((void)args(), ...);
     }
 }
 
-#endif // DAEMON_DATA_TPP
+#endif // DAEMON_WATCHER_TPP
