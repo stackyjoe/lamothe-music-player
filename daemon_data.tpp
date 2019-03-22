@@ -1,0 +1,4 @@
+#ifndef DAEMON_DATA_TPP
+#define DAEMON_DATA_TPP
+
+#endif // DAEMON_DATA_TPP
