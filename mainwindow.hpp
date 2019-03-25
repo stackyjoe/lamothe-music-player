@@ -38,7 +38,8 @@ protected:
     void add_file_to_library(const std::string& file_path);
     void add_file_by_dialog();
     void add_folder_by_dialog();
-    void save_library();
+    void play_song_from_index(const QModelIndex &index);
+    void save_library() const;
     void sync_tiles_with_library();
     void sync_ui_with_library();
     void changeVolume(int new_vol);
@@ -52,9 +53,10 @@ private:
     music_player &audio_interface;
     tag_handler &tag_interface;
 
-    std::mutex audio_lock;
-    std::mutex seek_bar_lock;
-    std::mutex volume_lock;
+    mutable std::mutex audio_lock;
+    mutable std::mutex seek_bar_lock;
+    mutable std::mutex volume_lock;
+    mutable std::mutex tag_lock;
     std::thread daemon_thread;
 
 private slots:

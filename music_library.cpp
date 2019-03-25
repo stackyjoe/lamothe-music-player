@@ -25,7 +25,7 @@ void music_library::setState(UserDesiredState _state)
     return;
 }
 
-UserDesiredState music_library::getState() {
+UserDesiredState music_library::getState() const {
     return desired_state;
 }
 
@@ -134,7 +134,7 @@ void music_library::remove(const std::string &bad_song_path) {
     return;
 }
 
-const std::vector<std::string> &music_library::songs() {
+const std::vector<std::string> &music_library::songs() const {
     return song_paths;
 }
 
@@ -146,7 +146,7 @@ std::string music_library::next_song() {
     return song_path;
 }
 
-const std::string music_library::what_file_is_playing() {
+const std::string music_library::what_file_is_playing() const {
     std::string song_path;
     if(current_song.has_value())
         song_path = * current_song.value();
@@ -162,6 +162,6 @@ void music_library::find_song(const std::string &path) {
     current_song = itr;
 }
 
-void music_library::stop() {
+void music_library::stop() const {
     player.stop();
 }

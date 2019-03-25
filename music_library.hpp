@@ -29,18 +29,18 @@ public:
 
     std::string next_song();
     void setState(UserDesiredState _state);
-    UserDesiredState getState();
+    UserDesiredState getState() const;
     void setLibraryFile(QString lib_path);
     void find_song(const std::string &path);
     void setVolume(int new_vol);
     float getPercentPlayed();
     void seekByPercent(float percent);
-    void stop();
+    void stop() const;
     bool contains(const std::string &song_path) const;
     void add(std::string song_path);
     void remove(const std::string &song_path);
-    const std::vector<std::string> &songs();
-    const std::string what_file_is_playing();
+    const std::vector<std::string> &songs() const;
+    const std::string what_file_is_playing() const;
 
 protected:
     // Optional iterator is set to std::nullopt to indicate iterator invalidation
@@ -49,7 +49,7 @@ protected:
     music_player &player;
     std::set<std::string> unique_song_paths;
     std::vector<std::string> song_paths;
-    std::mutex player_mutex;
+    mutable std::mutex player_mutex;
 };
 
 #endif // MUSIC_LIBRARY_HPP

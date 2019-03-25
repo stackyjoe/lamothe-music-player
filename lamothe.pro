@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets
+QT       += core gui widgets svg
 
 greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
@@ -31,22 +31,23 @@ SOURCES += \
         mainwindow.cpp \
     music_library.cpp \
     sfml_player.cpp \
-    song_tile_widget.cpp \
     daemon_watcher.tpp \
-    taglib_handler.cpp
+    taglib_handler.cpp \
+    song_tile_model.cpp
 
 HEADERS += \
         mainwindow.hpp \
     music_library.hpp \
     music_player.hpp \
     sfml_player.hpp \
-    song_tile_widget.hpp \
     tag_handler.hpp \
-    taglib_handler.hpp
+    taglib_handler.hpp \
+    song_tile_model.hpp
 
 FORMS += \
-        mainwindow.ui \
-    song_tile_widget.ui
+        mainwindow.ui
+
+RESOURCES += resources.qrc
 
 LIBS += -lsfml-audio            #SFML Static Module
 LIBS += -lsfml-system
@@ -62,3 +63,6 @@ LIBS += -ltag                   #Dependency
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    resources.qrc

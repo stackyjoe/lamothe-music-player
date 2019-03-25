@@ -7,7 +7,7 @@
 
 #include "daemon_watcher.tpp"
 #include "mainwindow.hpp"
-#include "song_tile_widget.hpp"
+#include "song_tile_model.hpp"
 
 MainWindow::MainWindow(music_player &_audio_interface, tag_handler &_tag_interface, QWidget *parent) :
     QMainWindow(parent),
@@ -39,7 +39,16 @@ MainWindow::MainWindow(music_player &_audio_interface, tag_handler &_tag_interfa
     )
 {
     ui->setupUi(this);
-    ui->listView->setModel(new QStringListModel(nullptr)); // NOLINT(cppcoreguidelines-owning-memory)
+    showMaximized();
+
+    ui->tableView->setModel(new song_tile_model(nullptr)); // NOLINT(cppcoreguidelines-owning-memory)
+
+    ui->tableView->horizontalHeader()->setStretchLastSection(true);
+    ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableView->setDefaultDropAction(Qt::MoveAction);
+    ui->tableView->setDragDropMode(QAbstractItemView::InternalMove);
+    ui->tableView->setAcceptDrops(true);
+    ui->tableView->setDragDropOverwriteMode(false);
     sync_tiles_with_library();
 
     connect(ui->actionAddSong, &QAction::triggered, this, &MainWindow::add_file_by_dialog);
@@ -52,6 +61,12 @@ MainWindow::MainWindow(music_player &_audio_interface, tag_handler &_tag_interfa
     connect(ui->volumeSlider, &QAbstractSlider::valueChanged, this, &MainWindow::changeVolume);
     connect(ui->seekSlider, &QAbstractSlider::sliderReleased, this, [&](){this->seek();});
     connect(ui->seekSlider, &QAbstractSlider::sliderPressed, this, [&](){seek_bar_lock.lock();});
+    connect(ui->tableView, &QTableView::doubleClicked, this, &MainWindow::play_song_from_index);
+    show();
+    ui->tableView->show();
+    ui->tableView->setColumnWidth(0, static_cast<int>(width()));
+    ui->tableView->setColumnWidth(1,static_cast<int>(0.25*width()));
+    ui->tableView->setColumnWidth(2,static_cast<int>(0.25*width()));
 }
 
 void MainWindow::fooBar() {
@@ -63,9 +78,12 @@ void MainWindow::changeVolume(int new_vol) {
     lib.setVolume(new_vol);
 }
 
-void MainWindow::save_library() {
+void MainWindow::save_library() const {
     const std::vector<std::string> &files = lib.songs();
-    QString save_file_path = QFileDialog::getSaveFileName(this, tr("Save library to file"), QDir::homePath(), tr("Library (*.csv)"));
+    QString save_file_path = QFileDialog::getSaveFileName(nullptr,
+                                                          tr("Save library to file"),
+                                                          QDir::homePath(),
+                                                          tr("Library (*.csv)"));
 
     QFile file(save_file_path);
     if(not file.open(QIODevice::WriteOnly)) {
@@ -101,7 +119,7 @@ void MainWindow::setSeekBarPosition(float percent) {
 
 void MainWindow::add_folder_by_dialog() {
     QDir folder_path =
-            QFileDialog::getExistingDirectory(this,
+            QFileDialog::getExistingDirectory(static_cast<QMainWindow*>(this),
                                               tr("Choose directory to add"),
                                               QDir::homePath()
                                              );
@@ -114,7 +132,7 @@ void MainWindow::add_folder_by_dialog() {
 
 void MainWindow::sync_tiles_with_library() {
     const std::vector<std::string> &songs = lib.songs();
-    QAbstractItemModel * model = ui->listView->model();
+    QAbstractItemModel * model = ui->tableView->model();
 
     if(songs.size() < static_cast<size_t>(model->rowCount())) {
         int new_max = static_cast<int>(songs.size());
@@ -129,10 +147,33 @@ void MainWindow::sync_tiles_with_library() {
 
     size_t max = songs.size();
 
+
     for(size_t i = 0; i < max; ++i) {
-        QModelIndex index = model->index(static_cast<int>(i),0);
-        auto * p = new song_tile_widget(songs[i],lib, tag_interface, *this); // NOLINT(cppcoreguidelines-owning-memory)
-        ui->listView->setIndexWidget(index, p);
+        QModelIndex index;
+        index = model->index(static_cast<int>(i),0);
+        ui->tableView->model()->setData(index, QString::fromStdString((songs[i])), Qt::UserRole);
+
+        std::scoped_lock tag_interface_lock(tag_lock);
+
+        tag_interface.openFromFile(songs[i]);
+        if(not tag_interface.ownsAFile())
+            continue;
+        ui->tableView->model()->setData(index, QString::fromStdString(tag_interface.track_title()), Qt::DisplayRole);
+
+        index = model->index(static_cast<int>(i),1);
+        ui->tableView->model()->setData(index, QString::fromStdString(tag_interface.album_title()), Qt::DisplayRole);
+
+        index = model->index(static_cast<int>(i),2);
+        ui->tableView->model()->setData(index, QString::fromStdString(tag_interface.artist_title()), Qt::DisplayRole);
+
+        index = model->index(static_cast<int>(i),3);
+        ui->tableView->model()->setData(index, QString::fromStdString(tag_interface.recording_year()), Qt::DisplayRole);
+
+        index = model->index(static_cast<int>(i),4);
+        ui->tableView->model()->setData(index, QString::fromStdString(tag_interface.duration()), Qt::DisplayRole);
+
+
+
     }
 
 }
@@ -144,7 +185,6 @@ void MainWindow::sync_ui_with_library() {
         case PlayerStatus::playing:
             break;
         case PlayerStatus::paused:
-            qDebug() << tr("User wants to play, but backend is paused.\n");
             audio_interface.play();
             break;
         default: {
@@ -153,7 +193,7 @@ void MainWindow::sync_ui_with_library() {
             if(not tag_interface.ownsAFile()) {
                 break;
             }
-            ui->currently_playing_label->setText(QString::fromStdString(tag_interface.track_title()));
+            //ui->currently_playing_label->setText(QString::fromStdString(tag_interface.track_title()));
             playSong(next);
         } break;
         }
@@ -187,6 +227,14 @@ void MainWindow::sync_ui_with_library() {
 
 }
 
+void MainWindow::play_song_from_index(const QModelIndex &index) {
+    auto * model = index.model();
+    QString filename = model->data(model->index(index.row(),0),Qt::UserRole).toString();
+    QString track_name = model->data(model->index(index.row(),0), Qt::DisplayRole).toString();
+    setCurrentlyPlayingTrackTitle(track_name.toStdString());
+    playSong(filename.toStdString());
+}
+
 void MainWindow::playSong(const std::string &path) {
     std::scoped_lock lock(audio_lock);
 
@@ -204,12 +252,29 @@ void MainWindow::add_file_to_library(const std::string& file_path) {
     if(! lib.contains(file_path)) {
         lib.add(file_path);
 
-        int cur_song_count = ui->listView->model()->rowCount();
-        ui->listView->model()->insertRow(cur_song_count);
-        QModelIndex index = ui->listView->model()->index(cur_song_count, 0);
-        auto * p = new song_tile_widget(file_path, lib, tag_interface, *this); // NOLINT(cppcoreguidelines-owning-memory)
-        ui->listView->setIndexWidget(index, p);
-        ui->listView->update();
+        int cur_song_count = ui->tableView->model()->rowCount();
+        ui->tableView->model()->insertRow(cur_song_count);
+        QModelIndex index = ui->tableView->model()->index(cur_song_count, 0);
+        QAbstractItemModel * model = ui->tableView->model();
+        model->setData(index, QString::fromStdString(file_path), Qt::UserRole);
+        std::scoped_lock lock(tag_lock);
+        tag_interface.openFromFile(file_path);
+
+        model->setData(index, QString::fromStdString(tag_interface.track_title()), Qt::DisplayRole);
+
+        index = ui->tableView->model()->index(cur_song_count, 1);
+        model->setData(index, QString::fromStdString(tag_interface.album_title()), Qt::DisplayRole);
+
+        index = ui->tableView->model()->index(cur_song_count, 2);
+        model->setData(index, QString::fromStdString(tag_interface.artist_title()), Qt::DisplayRole);
+
+        index = ui->tableView->model()->index(cur_song_count, 3);
+        model->setData(index, QString::fromStdString(tag_interface.recording_year()), Qt::DisplayRole);
+
+        index = ui->tableView->model()->index(cur_song_count, 4);
+        model->setData(index, QString::fromStdString(tag_interface.duration()), Qt::DisplayRole);
+
+        ui->tableView->update();
     }
 }
 
