@@ -17,14 +17,18 @@ public:
     sfml_player(sfml_player &&other) = default;
     sfml_player &operator=(sfml_player &&other) = default;
 
-    PlayerStatus getStatus() override;
+    PlayerStatus getStatus() const override;
+
+    float getPercentPlayed() const override;
+
+protected:
+    void pause() override;
     void play() override;
     void stop() override;
-    void setVolume(int new_vol) override;
-    float getPercentPlayed() override;
-    void pause() override;
     bool openFromFile(const std::string &path) override;
     void seekByPercent(float percent) override;
+    void setVolume(int new_vol) override;
+
 private:
     sf::Music interface;
 };

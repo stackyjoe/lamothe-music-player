@@ -1,8 +1,6 @@
 #ifndef DAEMON_WATCHER_TPP
 #define DAEMON_WATCHER_TPP
 
-#include <any>
-#include <thread>
 #include <type_traits>
 
 template<typename... Args>

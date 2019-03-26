@@ -3,14 +3,16 @@
 
 #include <taglib/fileref.h>
 
-#include "tag_handler.hpp"
+#include "metadata_interface.hpp"
 
 
-class taglib_handler : public tag_handler
+class taglib_interface : public metadata_interface
 {
 public:
-    taglib_handler() = default;
-    ~taglib_handler() override = default;
+    taglib_interface() = default;
+    ~taglib_interface() override = default;
+protected:
+    // Used only by tag_handler::get_metadata_from()
     void openFromFile(const std::string &file_path) override;
     std::string track_title() override;
     std::string album_title() override;

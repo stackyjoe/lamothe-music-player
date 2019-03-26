@@ -24,25 +24,26 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++1z
 
-QMAKE_CXXFLAGS += -std=c++17
+QMAKE_CXXFLAGS += -std=c++17 -Wall -Wextra -pedantic-errors
 
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    music_library.cpp \
     sfml_player.cpp \
     daemon_watcher.tpp \
-    taglib_handler.cpp \
-    song_tile_model.cpp
+    song_tile_model.cpp \
+    taglib_interface.cpp
 
 HEADERS += \
         mainwindow.hpp \
-    music_library.hpp \
     music_player.hpp \
     sfml_player.hpp \
-    tag_handler.hpp \
-    taglib_handler.hpp \
-    song_tile_model.hpp
+    song_tile_model.hpp \
+    player_interface.hpp \
+    music_metadata.hpp \
+    user_desired_state.hpp \
+    taglib_interface.hpp \
+    metadata_interface.hpp
 
 FORMS += \
         mainwindow.ui

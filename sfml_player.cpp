@@ -2,7 +2,7 @@
 
 music_player::~music_player() = default;
 
-PlayerStatus sfml_player::getStatus() {
+PlayerStatus sfml_player::getStatus() const {
     PlayerStatus st = PlayerStatus::error;
 
     switch(interface.getStatus()) {
@@ -43,7 +43,7 @@ void sfml_player::setVolume(int new_vol) {
     return;
 }
 
-float sfml_player::getPercentPlayed() {
+float sfml_player::getPercentPlayed() const {
     return static_cast<float>(interface.getPlayingOffset().asMilliseconds())/static_cast<float>(std::max(interface.getDuration().asMilliseconds(),1));
 }
 
