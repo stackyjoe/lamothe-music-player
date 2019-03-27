@@ -22,48 +22,59 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-CONFIG += c++1z
+# Support for this option is relatively new, older QtCreator installation may not have it. "c++1z" seems to
+# work in those cases.
+CONFIG += c++17
 
 QMAKE_CXXFLAGS += -std=c++17 -Wall -Wextra -pedantic-errors
+
+!defined(USE_SFML) {
+message("Using SFML audio backend.")
+LIBS += -lsfml-audio            # SFML audio shared library
+LIBS += -lsfml-system           # SFML system shared library, needed for sf::Time
+LIBS += -lopenal                # dependency
+LIBS += -lFLAC                  # dependency
+LIBS += -lvorbisenc             # dependency
+LIBS += -lvorbisfile            # dependency
+LIBS += -lvorbis                # dependency
+LIBS += -logg                   # dependency
+
+SOURCES += audio_backends/sfml_wrapper.cpp
+HEADERS += audio_backends/sfml_wrapper.hpp
+}
+
+!defined(USE_TAGLIB) {
+message("Using taglib metadata backend.")
+LIBS += -ltag                   #Taglib audio metadata library
+
+SOURCES += "metadata_backends/taglib_wrapper.cpp"
+HEADERS += "metadata_backends/taglib_wrapper.hpp"
+}
 
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    sfml_player.cpp \
-    daemon_watcher.tpp \
-    song_tile_model.cpp \
-    taglib_interface.cpp
+    song_tile_model.cpp
 
 HEADERS += \
         mainwindow.hpp \
-    music_player.hpp \
-    sfml_player.hpp \
     song_tile_model.hpp \
-    player_interface.hpp \
     music_metadata.hpp \
     user_desired_state.hpp \
-    taglib_interface.hpp \
-    metadata_interface.hpp
+    metadata_interface.hpp \
+    metadata_wrapper.hpp \
+    audio_wrapper.hpp \
+    audio_interface.hpp
 
 FORMS += \
         mainwindow.ui
 
 RESOURCES += resources.qrc
 
-LIBS += -lsfml-audio            #SFML Static Module
-LIBS += -lsfml-system
-LIBS += -lopenal                #Dependency
-LIBS += -lFLAC                  #Dependency
-LIBS += -lvorbisenc             #Dependency
-LIBS += -lvorbisfile            #Dependency
-LIBS += -lvorbis                #Dependency
-LIBS += -logg                   #Dependency
-LIBS += -ltag                   #Dependency
-
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
+
 else: unix:!android: target.path = /opt/$${TARGET}/bin
+
 !isEmpty(target.path): INSTALLS += target
 
-RESOURCES += \
-    resources.qrc

@@ -1,8 +1,8 @@
-#include "sfml_player.hpp"
+#include "audio_backends/sfml_wrapper.hpp"
 
-music_player::~music_player() = default;
+audio_wrapper::~audio_wrapper() = default;
 
-PlayerStatus sfml_player::getStatus() const {
+PlayerStatus sfml_wrapper::getStatus() const {
     PlayerStatus st = PlayerStatus::error;
 
     switch(interface.getStatus()) {
@@ -23,35 +23,37 @@ PlayerStatus sfml_player::getStatus() const {
     return st;
 }
 
-void sfml_player::play() {
+void sfml_wrapper::play() {
     interface.play();
     return;
 }
 
-void sfml_player::stop() {
+void sfml_wrapper::stop() {
     interface.stop();
     return;
 }
 
-void sfml_player::pause() {
+void sfml_wrapper::pause() {
     interface.pause();
     return;
 }
 
-void sfml_player::setVolume(int new_vol) {
+void sfml_wrapper::setVolume(int new_vol) {
     interface.setVolume(static_cast<float>(new_vol));
     return;
 }
 
-float sfml_player::getPercentPlayed() const {
+float sfml_wrapper::getPercentPlayed() const {
     return static_cast<float>(interface.getPlayingOffset().asMilliseconds())/static_cast<float>(std::max(interface.getDuration().asMilliseconds(),1));
 }
 
-void sfml_player::seekByPercent(float percent) {
+void sfml_wrapper::seekByPercent(float percent) {
     interface.setPlayingOffset(percent*interface.getDuration());
     return;
 }
 
-bool sfml_player::openFromFile(const std::string &path) {
+bool sfml_wrapper::openFromFile(const std::string &path) {
     return interface.openFromFile(path);
 }
+
+audio_interface audio_handle = audio_interface::make<sfml_wrapper>();

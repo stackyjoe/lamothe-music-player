@@ -1,21 +1,21 @@
 #ifndef SFML_PLAYER_HPP
 #define SFML_PLAYER_HPP
 
-#include "music_player.hpp"
+#include "audio_interface.hpp"
 
 #include <SFML/Audio.hpp>
 
-class sfml_player : public music_player
+class sfml_wrapper : public audio_wrapper
 {
 public:
-    sfml_player() = default;
-    ~sfml_player() override = default;
+    sfml_wrapper() = default;
+    ~sfml_wrapper() override = default;
 
-    sfml_player(const sfml_player &other) = delete;
-    sfml_player &operator=(const sfml_player &other) = delete;
+    sfml_wrapper(const sfml_wrapper &other) = delete;
+    sfml_wrapper &operator=(const sfml_wrapper &other) = delete;
 
-    sfml_player(sfml_player &&other) = default;
-    sfml_player &operator=(sfml_player &&other) = default;
+    sfml_wrapper(sfml_wrapper &&other) = default;
+    sfml_wrapper &operator=(sfml_wrapper &&other) = default;
 
     PlayerStatus getStatus() const override;
 
@@ -32,5 +32,7 @@ protected:
 private:
     sf::Music interface;
 };
+
+extern audio_interface audio_handle;
 
 #endif // SFML_PLAYER_HPP

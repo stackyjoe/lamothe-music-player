@@ -14,7 +14,7 @@
 
 #include "metadata_interface.hpp"
 #include "music_metadata.hpp"
-#include "player_interface.hpp"
+#include "audio_interface.hpp"
 #include "user_desired_state.hpp"
 
 namespace Ui {
@@ -26,7 +26,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(player_interface &_audio_interface, metadata_interface &_tag_interface, QWidget *parent = nullptr);
+    explicit MainWindow(audio_interface &_audio_handle, metadata_interface &_metadata_handle, QWidget *parent = nullptr);
     MainWindow(const MainWindow &other) = delete;
     MainWindow &operator=(const MainWindow &other) = delete;
 
@@ -56,18 +56,18 @@ protected:
 
 private:
     std::unique_ptr<Ui::MainWindow> ui;
-    player_interface &audio_interface;
-    metadata_interface &tag_interface;
-    QPersistentModelIndex current_song;
+    audio_interface &audio_handle;
+    metadata_interface &metadata_handle;
 
     mutable std::mutex seek_bar_lock;
     mutable std::mutex volume_lock;
     mutable std::mutex tag_lock;
     std::thread daemon_thread;
 
-    //std::vector<std::string> song_paths;
     std::set<std::string> songs;
+    QPersistentModelIndex current_song;
     UserDesiredState state;
+
 
 private slots:
     void on_playButton_clicked();

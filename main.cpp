@@ -4,9 +4,8 @@
 #include <QDebug>
 #include <QDir>
 
-#include "player_interface.hpp"
-#include "sfml_player.hpp"
-#include "taglib_interface.hpp"
+#include "audio_interface.hpp"
+
 
 int main(int argc, char *argv[])
 {
@@ -19,13 +18,11 @@ int main(int argc, char *argv[])
     }
 
     // Change these two to change audio backend.
-    sfml_player player;
-    taglib_interface tag_interface;
-
-    player_interface audio_interface(player);
+    extern metadata_interface metadata_handle;
+    extern audio_interface audio_handle;
 
     QApplication a(argc, argv);
-    MainWindow w(audio_interface, tag_interface, nullptr);
+    MainWindow w(audio_handle, metadata_handle, nullptr);
     w.show();
 
     return QApplication::exec();

@@ -1,29 +1,48 @@
 #ifndef TAG_HANDLER_HPP
 #define TAG_HANDLER_HPP
 
+#include <mutex>
 #include <string>
 
 #include "music_metadata.hpp"
+#include "metadata_wrapper.hpp"
 
 class metadata_interface
 {
+protected:
+    std::mutex metadata_lock;
+    std::unique_ptr<metadata_wrapper> implementation;
+
+    template<class metadata_implementation>
+    metadata_interface(std::unique_ptr<metadata_implementation> &&_implementation)
+        : implementation(std::move(_implementation)) {
+        static_assert (std::is_base_of<metadata_wrapper, metadata_implementation>::value,
+                       "metadata_interface template constructor must be called with a std::unique_ptr to a class derived from metadata_wrapper.");
+    }
+
 public:
+    metadata_interface() = default;
+    // Copy constructor and copy assignment are implicitly forbidden by virtue of owning a unique_ptr and mutex.
+    metadata_interface(metadata_interface &&) = default;
+    metadata_interface &operator=(metadata_interface &&) = default;
+
     music_metadata get_metadata_of(const std::string &file_path) {
-        openFromFile(file_path);
-        if(ownsAFile())
-            return music_metadata(track_title(),album_title(),artist_title(),recording_year(),duration());
+        implementation->openFromFile(file_path);
+        if(implementation->ownsAFile())
+            return music_metadata(implementation->track_title(),
+                                  implementation->album_title(),
+                                  implementation->artist_title(),
+                                  implementation->recording_year(),
+                                  implementation->duration());
         return music_metadata();
     }
 
-protected:
-    virtual ~metadata_interface() = 0;
-    virtual void openFromFile(const std::string &file_path) = 0;
-    virtual std::string track_title() = 0;
-    virtual std::string album_title() = 0;
-    virtual std::string artist_title() = 0;
-    virtual std::string recording_year() = 0;
-    virtual std::string duration() = 0;
-    virtual bool ownsAFile() = 0;
+    template<class metadata_implementation>
+    static metadata_interface make() {
+        static_assert (std::is_base_of<metadata_wrapper,metadata_implementation>::value,
+                       "audio_interface::make must be called with an implementation of the audio_wrapper class.");
+        return metadata_interface(std::make_unique<metadata_implementation>());
+    }
 };
 
 #endif // TAG_HANDLER_HPP

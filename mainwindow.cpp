@@ -5,39 +5,32 @@
 #include <QPushButton>
 #include <QStringListModel>
 
-#include "daemon_watcher.tpp"
 #include "mainwindow.hpp"
 #include "song_tile_model.hpp"
 
-MainWindow::MainWindow(player_interface &_audio_interface, metadata_interface &_tag_interface, QWidget *parent) :
+MainWindow::MainWindow(audio_interface &_audio_handle, metadata_interface &_metadata_handle, QWidget *parent) :
     QMainWindow(parent),
     ui(std::make_unique<Ui::MainWindow>()),
-    audio_interface(_audio_interface),
-    tag_interface(_tag_interface),
+    audio_handle(_audio_handle),
+    metadata_handle(_metadata_handle),
     daemon_thread(
         [&](){
-            daemon_watcher(
-                // daemon_watcher is a variadic template function that just calls its arguments,
-                //  in the given order, in a while(1) loop.
-                // It's not really necessary, but it's fun!
+            while(1)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(125));
 
-                [&]() {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(125));
-                },
-                [&]() {
-                    // Syncs backend with user-expected behavior.
-                    this->sync_audio_with_library_state();
-                },
-                [&]() {
-                    // Updates seek bar based on backend
-                    if(ui->seekSlider != nullptr) {
-                        float time_pos = audio_interface.perform(
-                                    [](music_player &player){ return player.getPercentPlayed(); }
-                                );
-                        set_seek_bar_position(time_pos);
-                    }
+                // Syncs backend with user-expected behavior.
+                this->sync_audio_with_library_state();
+
+                // Synchronizes UI seek bar with audio backend.
+                if(ui->seekSlider != nullptr) {
+                    float time_pos = audio_handle.perform(
+                            [](audio_wrapper &player){ return player.getPercentPlayed(); }
+                        );
+                   set_seek_bar_position(time_pos);
                 }
-            );
+
+            };
         }
     ),
     state(UserDesiredState::pause)
@@ -107,7 +100,7 @@ void MainWindow::fooBar() {
 
 
 [[ noreturn ]] void MainWindow::exitProgram() {
-    audio_interface.perform([](music_player &player){player.stop();});
+    audio_handle.perform([](audio_wrapper &player){player.stop();});
     std::quick_exit(EXIT_SUCCESS);
 }
 
@@ -123,7 +116,7 @@ void MainWindow::on_pauseButton_clicked()
 
 
 void MainWindow::changeVolume(int new_vol) {
-    audio_interface.perform([&new_vol](music_player &player){player.setVolume(new_vol);});
+    audio_handle.perform([&new_vol](audio_wrapper &player){player.setVolume(new_vol);});
 }
 
 void MainWindow::save_library() const {
@@ -153,7 +146,7 @@ void MainWindow::save_library() const {
 void MainWindow::seek() {
     float pos = ui->seekSlider->sliderPosition();
     pos = pos/std::max(1,ui->seekSlider->maximum());
-    audio_interface.perform([pos](music_player &player){player.seekByPercent(pos);});
+    audio_handle.perform([pos](audio_wrapper &player){player.seekByPercent(pos);});
     seek_bar_lock.unlock();
 }
 
@@ -179,7 +172,7 @@ void MainWindow::add_file_to_library(const std::string& file_path) {
         QAbstractItemModel * model = ui->tableView->model();
         model->setData(index, QString::fromStdString(file_path), Qt::UserRole);
 
-        music_metadata metadata = tag_interface.get_metadata_of(file_path);
+        music_metadata metadata = metadata_handle.get_metadata_of(file_path);
 
         model->setData(index, metadata.track_title, Qt::DisplayRole);
 
@@ -247,7 +240,7 @@ void MainWindow::add_files_to_library(const std::vector<std::string> &song_paths
         QString path = QString::fromStdString(song_paths[i]);
         ui->tableView->model()->setData(index, path, Qt::UserRole);
 
-        music_metadata metadata = tag_interface.get_metadata_of(song_paths[i]);
+        music_metadata metadata = metadata_handle.get_metadata_of(song_paths[i]);
 
         model->setData(index, metadata.track_title, Qt::DisplayRole);
 
@@ -270,11 +263,11 @@ void MainWindow::add_files_to_library(const std::vector<std::string> &song_paths
 void MainWindow::sync_audio_with_library_state() {
     switch(state) {
     case UserDesiredState::play :
-        switch(audio_interface.get_status()) {
+        switch(audio_handle.get_status()) {
         case PlayerStatus::playing:
             break;
         case PlayerStatus::paused:
-            audio_interface.perform([](music_player &player){player.play();});
+            audio_handle.perform([](audio_wrapper &player){player.play();});
             break;
         default: {
             current_song = ui->tableView->model()->index(current_song.row()+1,0);
@@ -284,9 +277,9 @@ void MainWindow::sync_audio_with_library_state() {
         }
         break;
     case UserDesiredState::pause :
-        switch(audio_interface.get_status()) {
+        switch(audio_handle.get_status()) {
         case PlayerStatus::playing:
-            audio_interface.perform([](music_player &player){player.pause();});
+            audio_handle.perform([](audio_wrapper &player){player.pause();});
             break;
 
         default:
@@ -295,9 +288,9 @@ void MainWindow::sync_audio_with_library_state() {
         break;
 
     case UserDesiredState::stop :
-        switch (audio_interface.get_status()) {
+        switch (audio_handle.get_status()) {
         case PlayerStatus::playing:
-            audio_interface.perform([](music_player &player){player.pause();});
+            audio_handle.perform([](audio_wrapper &player){player.pause();});
             break;
 
         default:
@@ -336,8 +329,8 @@ void MainWindow::play_song(const QModelIndex &index) {
 }
 
 void MainWindow::play_song(const std::string &path) {
-    audio_interface.perform(
-        [&path](music_player &player){
+    audio_handle.perform(
+        [&path](audio_wrapper &player){
             if(not player.openFromFile(path)) {
                 qDebug() << "Error opening file: " << QString::fromStdString(path) << "\n";
             }
@@ -348,4 +341,3 @@ void MainWindow::play_song(const std::string &path) {
 
     state = UserDesiredState::play;
 }
-

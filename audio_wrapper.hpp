@@ -1,5 +1,5 @@
-#ifndef MUSIC_PLAYER_HPP
-#define MUSIC_PLAYER_HPP
+#ifndef AUDIO_WRAPPER_HPP
+#define AUDIO_WRAPPER_HPP
 
 #include <mutex>
 #include <optional>
@@ -7,13 +7,11 @@
 
 enum class PlayerStatus { error, playing, paused, stopped };
 
-class player_interface;
-
-class music_player
+class audio_wrapper
 {
 public:
-    music_player() = default;
-    virtual ~music_player() = 0;
+    audio_wrapper() = default;
+    virtual ~audio_wrapper() = 0;
 
     virtual PlayerStatus getStatus() const = 0;
     virtual float getPercentPlayed() const = 0;
@@ -26,4 +24,4 @@ public:
     virtual void setVolume( int new_vol) = 0;
 };
 
-#endif // MUSIC_PLAYER_HPP
+#endif // AUDIO_WRAPPER_HPP

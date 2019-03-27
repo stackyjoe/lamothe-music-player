@@ -5,12 +5,11 @@
 
 #include "metadata_interface.hpp"
 
-
-class taglib_interface : public metadata_interface
+class taglib_wrapper : public metadata_wrapper
 {
 public:
-    taglib_interface() = default;
-    ~taglib_interface() override = default;
+    taglib_wrapper() = default;
+    ~taglib_wrapper() override = default;
 protected:
     // Used only by tag_handler::get_metadata_from()
     void openFromFile(const std::string &file_path) override;
@@ -23,5 +22,7 @@ protected:
 private:
     TagLib::FileRef interface;
 };
+
+extern metadata_interface metadata_handle;
 
 #endif // TAGLIB_HANDLER_HPP
