@@ -1,11 +1,20 @@
 #ifndef AUDIO_INTERFACE_HPP
 #define AUDIO_INTERFACE_HPP
 
+#include <memory>
+#include <mutex>
 #include <optional>
+#include <type_traits>
 
 #include "audio_wrapper.hpp"
 
-// This is a thread safe interface for the abstract class music_player.
+/// \brief This is a thread safe interface for the abstract class music_player.
+/// The class audio_interface is an interface in the sense of the pimpl idiom.
+/// Unfortunately, the implementation is an abstract class, which are also called
+/// interfaces. This is the one which kept the title. This class only directly
+/// exposes a few functions of the wrapper class, but everything can be called
+/// through the "perform" or "try_perform" template function, which enforces
+/// proper mutex safety.
 class  audio_interface {
 protected:
 
@@ -20,11 +29,16 @@ protected:
     }
 
 public:
-    PlayerStatus get_status() const {
+
+    const std::vector<std::string> & supported_file_formats() const noexcept {
+        return implementation->supported_file_formats();
+    }
+
+    PlayerStatus get_status() const noexcept {
         return implementation->getStatus();
     }
 
-    float get_percent_played() const {
+    float get_percent_played() const noexcept {
         return implementation->getPercentPlayed();
     }
 
@@ -41,7 +55,10 @@ public:
         return audio_interface(std::make_unique<audio_implementation>());
     }
 
-    // Trick to avoid sharing a mutex for the music_player directly
+    // Trick to avoid sharing a mutex for the music_player directly, originally due to Herb Sutter,
+    // at least as far as I know. Checking with a toy example in M. Godbolt's Compiler Explorer
+    // suggests that on -O0, -Og, and -O1 you cannot assume the lambda calls will be optimized out,
+    // but that they likely are on higher optimization settings, at least for GCC and clang.
     template<class operation>
     auto perform(operation o) const -> decltype (o(*implementation)) {
         static_assert (std::is_invocable<decltype(o), audio_wrapper &>::value,

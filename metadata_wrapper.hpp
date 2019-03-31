@@ -1,5 +1,6 @@
 #ifndef METADATA_WRAPPER_H
 #define METADATA_WRAPPER_H
+
 #include <string>
 
 class metadata_wrapper {

@@ -1,5 +1,5 @@
-#ifndef TAGLIB_HANDLER_HPP
-#define TAGLIB_HANDLER_HPP
+#ifndef TAGLIB_WRAPPER_HPP
+#define TAGLIB_WRAPPER_HPP
 
 #include <taglib/fileref.h>
 
@@ -25,4 +25,4 @@ private:
 
 extern metadata_interface metadata_handle;
 
-#endif // TAGLIB_HANDLER_HPP
+#endif // TAGLIB_WRAPPER_HPP

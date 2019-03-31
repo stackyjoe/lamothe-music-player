@@ -54,7 +54,8 @@ HEADERS += "metadata_backends/taglib_wrapper.hpp"
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    song_tile_model.cpp
+    song_tile_model.cpp \
+    music_metadata.cpp
 
 HEADERS += \
         mainwindow.hpp \

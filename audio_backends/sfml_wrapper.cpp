@@ -2,7 +2,19 @@
 
 audio_wrapper::~audio_wrapper() = default;
 
-PlayerStatus sfml_wrapper::getStatus() const {
+using std::string_literals::operator""s;
+
+sfml_wrapper::sfml_wrapper()  : supported_formats({ "*.wav"s, "*.ogg"s, "*.flac"s}) { }
+
+std::chrono::milliseconds sfml_wrapper::get_elapsed_time() const noexcept {
+    return std::chrono::milliseconds(interface.getPlayingOffset().asMilliseconds());
+}
+
+float sfml_wrapper::getPercentPlayed() const noexcept {
+    return static_cast<float>(interface.getPlayingOffset().asMilliseconds())/static_cast<float>(std::max(interface.getDuration().asMilliseconds(),1));
+}
+
+PlayerStatus sfml_wrapper::getStatus() const noexcept {
     PlayerStatus st = PlayerStatus::error;
 
     switch(interface.getStatus()) {
@@ -23,13 +35,13 @@ PlayerStatus sfml_wrapper::getStatus() const {
     return st;
 }
 
-void sfml_wrapper::play() {
-    interface.play();
-    return;
+const std::vector<std::string> & sfml_wrapper::supported_file_formats() const noexcept {
+    return supported_formats;
 }
 
-void sfml_wrapper::stop() {
-    interface.stop();
+
+void sfml_wrapper::play() {
+    interface.play();
     return;
 }
 
@@ -38,13 +50,13 @@ void sfml_wrapper::pause() {
     return;
 }
 
-void sfml_wrapper::setVolume(int new_vol) {
-    interface.setVolume(static_cast<float>(new_vol));
+void sfml_wrapper::stop() {
+    interface.stop();
     return;
 }
 
-float sfml_wrapper::getPercentPlayed() const {
-    return static_cast<float>(interface.getPlayingOffset().asMilliseconds())/static_cast<float>(std::max(interface.getDuration().asMilliseconds(),1));
+bool sfml_wrapper::openFromFile(const std::string &path) {
+    return interface.openFromFile(path);
 }
 
 void sfml_wrapper::seekByPercent(float percent) {
@@ -52,8 +64,10 @@ void sfml_wrapper::seekByPercent(float percent) {
     return;
 }
 
-bool sfml_wrapper::openFromFile(const std::string &path) {
-    return interface.openFromFile(path);
+void sfml_wrapper::setVolume(int new_vol) {
+    interface.setVolume(static_cast<float>(new_vol));
+    return;
 }
+
 
 audio_interface audio_handle = audio_interface::make<sfml_wrapper>();
