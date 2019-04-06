@@ -98,7 +98,7 @@ void MainWindow::on_nextButton_clicked() {
 }
 
 void MainWindow::changeVolume(int new_vol) {
-    audio_handle.perform([&new_vol](audio_wrapper &player){player.setVolume(new_vol);});
+    audio_handle.perform([&new_vol](audio_wrapper &player){player.set_volume(new_vol);});
 }
 
 void MainWindow::save_library_via_dialog() const {
@@ -157,7 +157,7 @@ void MainWindow::open_library(QString library_path) {
 void MainWindow::seek() {
     float pos = ui->seekSlider->sliderPosition();
     pos = pos/std::max(1,ui->seekSlider->maximum());
-    audio_handle.perform([pos](audio_wrapper &player){player.seekByPercent(pos);});
+    audio_handle.perform([pos](audio_wrapper &player){player.seek_by_percent(pos);});
     seek_bar_lock.unlock();
 }
 
@@ -302,10 +302,14 @@ void MainWindow::sync_audio_with_library_state() {
 
 void MainWindow::sync_ui_with_audio_state() {
 
+    // This function can get called before things are fully initialized.
+    if(ui == nullptr or ui->seekSlider == nullptr or ui->playButton == nullptr)
+        return;
+
     // Synchronizes UI seek bar with audio backend.
     if(ui->seekSlider != nullptr) {
         float time_pos = audio_handle.perform(
-                [](audio_wrapper &player){ return player.getPercentPlayed(); }
+                [](audio_wrapper &player){ return player.get_percent_played(); }
             );
        set_seek_bar_position(time_pos);
     }
@@ -350,7 +354,7 @@ void MainWindow::play_song(const QModelIndex &index) {
 void MainWindow::play_song(const std::string &path) {
     audio_handle.perform(
         [&path](audio_wrapper &player){
-            if(not player.openFromFile(path)) {
+            if(not player.open_from_file(path)) {
                 qDebug() << "Error opening file: " << QString::fromStdString(path) << "\n";
             }
 

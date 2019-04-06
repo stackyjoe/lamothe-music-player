@@ -28,7 +28,12 @@ CONFIG += c++17
 
 QMAKE_CXXFLAGS += -std=c++17 -Wall -Wextra -pedantic-errors
 
-!defined(USE_SFML) {
+# I'm not sure this is the ideal way to do conditional compilation, but I couldn't figure out how
+# to get the defined(...) command to work. As a wise man once told me, "life is pain."
+DEFINES += USE_AUDIERE
+DEFINES += USE_TAGLIB
+
+contains(DEFINES, USE_SFML) {
 message("Using SFML audio backend.")
 LIBS += -lsfml-audio            # SFML audio shared library
 LIBS += -lsfml-system           # SFML system shared library, needed for sf::Time
@@ -43,7 +48,21 @@ SOURCES += audio_backends/sfml_wrapper.cpp
 HEADERS += audio_backends/sfml_wrapper.hpp
 }
 
-!defined(USE_TAGLIB) {
+contains(DEFINES, USE_AUDIERE) {
+message("Using Audiere audio backend.")
+LIBS += -laudiere
+LIBS += -lFLAC
+LIBS += -logg
+LIBS += -lvorbis
+LIBS += -lvorbisenc
+LIBS += -lvorbisfile
+
+SOURCES += audio_backends/audiere_wrapper.cpp
+HEADERS += audio_backends/audiere_wrapper.hpp
+}
+
+
+contains(DEFINES, USE_TAGLIB) {
 message("Using taglib metadata backend.")
 LIBS += -ltag                   #Taglib audio metadata library
 

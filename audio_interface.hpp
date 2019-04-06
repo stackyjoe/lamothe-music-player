@@ -35,11 +35,11 @@ public:
     }
 
     PlayerStatus get_status() const noexcept {
-        return implementation->getStatus();
+        return implementation->get_status();
     }
 
     float get_percent_played() const noexcept {
-        return implementation->getPercentPlayed();
+        return implementation->get_percent_played();
     }
 
     audio_interface() = default;

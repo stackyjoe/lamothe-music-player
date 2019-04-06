@@ -6,15 +6,12 @@ using std::string_literals::operator""s;
 
 sfml_wrapper::sfml_wrapper()  : supported_formats({ "*.wav"s, "*.ogg"s, "*.flac"s}) { }
 
-std::chrono::milliseconds sfml_wrapper::get_elapsed_time() const noexcept {
-    return std::chrono::milliseconds(interface.getPlayingOffset().asMilliseconds());
-}
 
-float sfml_wrapper::getPercentPlayed() const noexcept {
+float sfml_wrapper::get_percent_played() const noexcept {
     return static_cast<float>(interface.getPlayingOffset().asMilliseconds())/static_cast<float>(std::max(interface.getDuration().asMilliseconds(),1));
 }
 
-PlayerStatus sfml_wrapper::getStatus() const noexcept {
+PlayerStatus sfml_wrapper::get_status() const noexcept {
     PlayerStatus st = PlayerStatus::error;
 
     switch(interface.getStatus()) {
@@ -55,16 +52,16 @@ void sfml_wrapper::stop() {
     return;
 }
 
-bool sfml_wrapper::openFromFile(const std::string &path) {
+bool sfml_wrapper::open_from_file(const std::string &path) {
     return interface.openFromFile(path);
 }
 
-void sfml_wrapper::seekByPercent(float percent) {
+void sfml_wrapper::seek_by_percent(float percent) {
     interface.setPlayingOffset(percent*interface.getDuration());
     return;
 }
 
-void sfml_wrapper::setVolume(int new_vol) {
+void sfml_wrapper::set_volume(int new_vol) {
     interface.setVolume(static_cast<float>(new_vol));
     return;
 }

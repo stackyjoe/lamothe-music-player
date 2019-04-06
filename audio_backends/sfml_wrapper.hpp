@@ -17,9 +17,8 @@ public:
     sfml_wrapper(sfml_wrapper &&other) = default;
     sfml_wrapper &operator=(sfml_wrapper &&other) = default;
 
-    std::chrono::milliseconds get_elapsed_time() const noexcept override;
-    float getPercentPlayed() const noexcept override;
-    PlayerStatus getStatus() const noexcept override;
+    float get_percent_played() const noexcept override;
+    PlayerStatus get_status() const noexcept override;
     const std::vector<std::string> & supported_file_formats() const noexcept override;
 
 
@@ -27,9 +26,9 @@ public:
     void play() override;
     void stop() override;
 
-    bool openFromFile(const std::string &path) override;
-    void seekByPercent(float percent) override;
-    void setVolume(int new_vol) override;
+    bool open_from_file(const std::string &path) override;
+    void seek_by_percent(float percent) override;
+    void set_volume(int new_vol) override;
 
 protected:
     sfml_wrapper();
