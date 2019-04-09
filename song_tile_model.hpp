@@ -9,6 +9,7 @@ public:
     explicit song_tile_model(QObject *parent);
     Qt::ItemFlags flags(const QModelIndex&index) const override;
     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;
+    bool operator<(const song_tile_model &other) override;
 };
 
 #endif // SONG_TILE_MODEL_HPP

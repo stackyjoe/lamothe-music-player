@@ -197,8 +197,12 @@ void MainWindow::add_file_to_library(const std::string& file_path) {
 
 void MainWindow::add_file_by_dialog() {
 
+    QString supported_formats = "Audio files (";
+    for(auto &format : audio_handle.supported_file_formats())
+        supported_formats += QString::fromStdString(format) + tr(" ");
+    supported_formats += tr(")");
     std::string file_path = QFileDialog::getOpenFileName(this, tr("Open audio file"), QDir::homePath(),
-                                                tr("Ogg Vorbis files (*.ogg)")).toStdString();
+                                                supported_formats).toStdString();
     // Now Open it
     if (file_path.empty()) {
       return;

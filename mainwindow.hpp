@@ -10,8 +10,6 @@
 #include <set>
 #include <thread>
 
-#include <SFML/Audio.hpp>
-
 #include "audio_interface.hpp"
 #include "metadata_interface.hpp"
 #include "music_metadata.hpp"
@@ -19,7 +17,7 @@
 
 namespace Ui {
 class MainWindow;
-}
+} // Ui
 
 class MainWindow : public QMainWindow
 {
